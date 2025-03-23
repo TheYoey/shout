@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Processor Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        .result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+            border: 1px solid #ddd;
+            padding: 15px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Audio Processing API</h1>
+    <div>
+        <input type="file" id="audioFile" accept="audio/*">
+        <button onclick="processAudio()">Process Audio</button>
+    </div>
+    <div class="status" id="status">Select an audio file and click Process</div>
+    <div class="result" id="result"></div>
+
+    <script>
+        async function processAudio() {
+            const fileInput = document.getElementById('audioFile');
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            
+            if (!fileInput.files.length) {
+                statusDiv.textContent = 'Please select a file first.';
+                return;
+            }
+            
+            statusDiv.textContent = 'Uploading and processing... This may take a while depending on the file size.';
+            
+            const formData = new FormData();
+            formData.append('audio', fileInput.files[0]);
+            
+            try {
+                const startTime = new Date();
+                statusDiv.textContent = `Started processing at ${startTime.toLocaleTimeString()}...`;
+                
+                const response = await fetch('http://localhost:3001/process', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const endTime = new Date();
+                const processingTime = (endTime - startTime) / 1000;
+                
+                statusDiv.textContent = `Processing complete! Took ${processingTime} seconds`;
+                
+                resultDiv.innerHTML = `
+                    <h2>Summary:</h2>
+                    <div>${data.summary}</div>
+                    <h2>Speakers:</h2>
+                    <pre>${JSON.stringify(data.speakers, null, 2)}</pre>
+                `;
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
